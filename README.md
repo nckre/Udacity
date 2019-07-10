@@ -1,11 +1,14 @@
 # Linux Server Configuration
 ### Udacity Fullstack Nanodegree - Project 3
 _______________________
+
+
 ## Introduction
 ### What is this project about?
 This project is linked to the 5th module of the Udacity Fullstack Nanodegree, the "Deploying to Linux Servers" course. The course teaches the basics of Linux & how to set up and secure a Linux server on the web. The goal and final project of the Nanodegree is to get a web application running live on a secure web server.
 
 This ```README.md``` covers how the application from the 2nd project of the same nanodegree (available in this [repository](https://github.com/nckre/Udacity-FullstackND-Project2-ItemCatalog)) was deployed on an [Amazon Lightsail](https://lightsail.aws.amazon.com/) hosted Ubuntu Linux server.
+
 
 ### How is this document structured?
 This ```README.md``` broadly follows the 5 steps described in Udacity's "Project Details" which are necessary to pass the project:
@@ -15,14 +18,22 @@ This ```README.md``` broadly follows the 5 steps described in Udacity's "Project
 4. Prepare deployment of application
 5. Deploy application to server
 _______________________
+
+
 ## Get a server
 This part had 2 requirements:
 1. Start an Ubuntu Linux server instance on Amazon Lightsail.
 2. SSH into the server
+
+
 ### Start an Ubuntu Server
 I followed Udacity's recommendation and registered on [Amazon Lightsail](https://lightsail.aws.amazon.com/). After verification, I created an Ubuntu 16.04 instance in AWS Frankfurt data center.
+
 ![Lightsail Instance Setup](images/lightsail.png)
+
 The server is currently (July 2019) available under the public IP ```18.197.158.41``` and the host name ```ec2-18-197-158-41.eu-central-1.compute.amazonaws.com```. Since AWS only provides one free month of hosting, the application will not be available post summer 2019.
+
+
 ### SSH into the server
 For Linux-based instances, Lightsail uses Secure SHell (SSH) to connect to an server instance. SSH uses a key pair (a public key and a private key) to match the remote server to an authorized user. Lightsail's [account page](https://lightsail.aws.amazon.com/ls/webapp/account/keys) offers a download option for the default SSH key pair. The file name is based on the region so that my instance of the file was called ```LightsailDefaultKey-eu-central-1```. I use this name in the following steps:
 1. Move file ```LightsailDefaultKey-eu-central-1``` from the local machine's ```Download``` folder to the  ```.ssh``` folder and rename it to ```udacity_key.rsa```.
@@ -34,11 +45,14 @@ Shell command: ```ssh -i ~/.ssh/udacity_key.rsa ubuntu@18.197.158.41```
 
 At this point, the command prompt should change to ```ubuntu@18.197.158.41:~$``` (depending on prompt customizations)
 _______________________
+
+
 ## Secure the server
 This part had 3 requirements:
 1. Update all currently installed packages.
 2. Change the SSH port from 22 to 2200. Make sure to configure the Lightsail firewall to allow it.
 3. Configure the Uncomplicated Firewall (UFW) to only allow incoming connections for SSH (port 2200), HTTP (port 80), and NTP (port 123).
+
 
 ### Update packages
 To update the currently installed packages, 2 commands were run:
@@ -46,6 +60,7 @@ To update the currently installed packages, 2 commands were run:
 Shell command: ```sudo apt-get update```
 2. Upgrade to newer versions of packages:
 Shell command: ```sudo apt-get upgrade```
+
 
 ### Change SSH Port
 Disclaimer by Udacity: "*When changing the SSH port, make sure that the firewall is open for port 2200 first, so that you don't lock yourself out of the server. When you change the SSH port, the Lightsail instance will no longer be accessible through the web app 'Connect using SSH' button. The button assumes the default port is being used. There are instructions on the same page for connecting from your terminal to the instance. Connect using those instructions and then follow the rest of the steps.*"
@@ -57,6 +72,7 @@ Shell command: ```/sudo nano /etc/ssh/sshd_config```
 4. Restart the SSH connection
 Shell command: ```sudo service ssh restart```
 
+
 ### Configure Uncomplicated Firewall
 Configure the Uncomplicated Firewall (UFW) to only allow incoming connections for SSH (port 2200), HTTP (port 80), and NTP (port 123).
 1. ```$ sudo ufw allow 2200/tcp```
@@ -65,6 +81,8 @@ Configure the Uncomplicated Firewall (UFW) to only allow incoming connections fo
 4. ```$ sudo ufw deny 22```$
 5. ```$ sudo ufw enable```
 _______________________
+
+
 ## Give grader access
 Giving the grader access to the application via SSH requires 4 steps:
 1. Create a new user account named ```grader```
@@ -80,6 +98,8 @@ Giving the grader access to the application via SSH requires 4 steps:
 3. Create a SSH key pair for grader using the ```ssh-keygen``` tool on the **local machine**. In a separate terminal window, run these commands to generate a new key: ```cd ~/.ssh```, ```ssh-keygen -f ~/.ssh/grader_key.rsa```, ```grader```, ```*PASSWORD*``` ```cat ~/.ssh/grader_key.rsa.pub```. The content of this document has to be copied inside the ```authorized_keys``` folder on the Ubuntu server. On the **remote machine** run the command ```touch /home/grader/.ssh/authorized_keys``` and copy+paste the key. To protect the folder from unauthroized edits, change the access permission with the commands: ```sudo chmod 700 /home/grader/.ssh```, ```sudo chmod 644 /home/grader/.ssh/authorized_keys```, ```sudo chown -R grader:grader /home/grader/.ssh```, ```sudo service ssh restart```
 4. Log into the remote VM as the new grader user with the command ```ssh -i ~/.ssh/grader_key.rsa -p 2200 grader@18.197.158.41```. The command prompt should change to ```ubuntu@18.197.158.41:~$``` (depending on prompt customizations).
 5. To enforce SSH key based auhentication, open the sshd config file with ```sudo nano /etc/ssh/sshd_config``` and edit the line ```PasswordAuthentication``` to no. Restart with ```sudo service ssh restart```.
+_______________________
+
 
 ## Prepare deployment
 This stage required 4 steps:
@@ -91,15 +111,19 @@ This stage required 4 steps:
 6. Install and configure PostgreSQL
 7. Install git, Flask
 
+
 ### Configuring Time Zone
 To set the timezone to UTC, run the command ```sudo dpkg-reconfigure tzdata``` and choose ```None of the above``` from the initial selection. Then choose ```UTC``` in the new window.
+
 
 ### Configuring Locale Setting
 I was running into an error ```unsupported locale setting``` and ran the following commands based on a [stackoverflow](https://stackoverflow.com/questions/14547631/python-locale-error-unsupported-locale-setting) answer by Muhammad Hassan: ```export LC_ALL="en_US.UTF-8"```, ```export LC_CTYPE="en_US.UTF-8"```, ```sudo dpkg-reconfigure locales```
 
+
 ### Install and configure Apache
 To install ```apache2``` run the command ```sudo apt-get install apache2```.
 When navigating to the public IP of the project, the server should not show a default apache page similar to this one:
+
 ![Apache Default Page](images/apache.png)
 
 Due to the upcoming deprecation of Python2 I decided to re-write my project submission for the 2nd project in Python3. This requires a Python3 ```mod_wsgi package``` that's installed as follows:
@@ -118,10 +142,11 @@ sudo apt-get install postgresql postgresql-contrib
 
 ### Install git
 Run the follow command: ```sudo apt-get install git```. Configure git with your credentials. If you have no experience with Git, this free [Udacity course](https://eu.udacity.com/course/how-to-use-git-and-github--ud775) is helpful
+_______________________
 
 
-### Deploy the application
-#### Clone Application
+## Deploy the application
+### Clone Application
 Create a new directory for the app and change the access permissions:
 ```
 sudo mkdir /var/www/catalog
@@ -149,7 +174,7 @@ from catalog import app as application
 application.secret_key = 'super_secret_key'
 ```
 
-#### Update App Code
+### Update App Code
 The app will require several changes to run on a webserver:
 1. Change name from ```project.py``` to ```__init__.py```
 2. Edit the app to make the following changes (user CTRL+F to find them):
@@ -160,7 +185,7 @@ Do the same in the ```database_setup.py``` file where ```engine = create_engine(
 * ```CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']``` becomes ```CLIENT_ID = json.loads(open('/var/www/catalog/catalog/client_secrets.json', 'r').read())['web']['client_id']```
 * ```oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')``` becomes ```oauth_flow = flow_from_clientsecrets('/var/www/catalog/catalog/client_secrets.json', scope='')```
 
-#### Install virtual environment
+### Install virtual environment
 The rest of the application is configured in a virtual environment. This [article](https://www.geeksforgeeks.org/python-virtual-environment/) by geeksforgeeks explains some of the advantages.
 
 To install the virtual environment, run these 2 commands:
@@ -176,7 +201,7 @@ sudo chown -R grader:grader venv3/
 . venv3/bin/activate
 ```
 
-#### Install Packages
+### Install Packages
 Install all the packages that are imported in the python file for Python3 by running these commands:
 ```
 pip3 install httplib2
@@ -187,7 +212,7 @@ sudo apt-get install libpq-dev
 pip3 install psycopg2
 ```
 
-#### Configure Virtual Host
+### Configure Virtual Host
 Create a virtual host config file for the catalog and edit it via ```$ sudo nano /etc/apache2/sites-available/catalog.conf.```. Change the content to:
 ```
 <VirtualHost *:80>
@@ -213,7 +238,7 @@ Create a virtual host config file for the catalog and edit it via ```$ sudo nano
 ```
 To enable the catalog run ```$ sudo a2ensite catalog``` and restart the apache2 with ```$sudo service apache2 reload```.
 
-#### Configure DB
+### Configure DB
 The project also requires to not allow remote connections and create a new database user named ```catalog``` that has limited permissions to the catalog application database. To set this up, run the following commands:
 ```
 sudo su - postgres
@@ -237,7 +262,7 @@ host    all             all             127.0.0.1/32            md5
 host    all             all             ::1/128                 md5
 ```
 
-#### Change Google Authentication
+### Change Google Authentication
 To make the OAUTH work with the webapplication, some last changes are needed to the [Google Developer Console](https://console.developers.google.com). Google does not allow to directly whitelist IP addresses, so either the host name has to be used or a service like [xip.io](http://xip.io).
 
 In the Google console's applications tab "OAuth Consent Screen" the AWS domain has to be whitelisted by adding ```ec2-18-197-158-41.eu-central-1.compute.amazonaws.com``` to the list of authorized domains. Then, in the tab "Credentials" the "Authorized JavaScript origins" have to be modified to allow ```http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com``` and the "Authorized redirect URIs" need to include:
