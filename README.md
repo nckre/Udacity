@@ -64,22 +64,23 @@ Shell command: ```sudo apt-get upgrade```
 
 ### Change SSH Port
 Disclaimer by Udacity: "*When changing the SSH port, make sure that the firewall is open for port 2200 first, so that you don't lock yourself out of the server. When you change the SSH port, the Lightsail instance will no longer be accessible through the web app 'Connect using SSH' button. The button assumes the default port is being used. There are instructions on the same page for connecting from your terminal to the instance. Connect using those instructions and then follow the rest of the steps.*"
+
 To change the SSH port 5 steps are needed:
 1. Edit the ```sshd_config``` file inside the host specific configuration files ```/etc/ssh/sshd_config```.
-Shell command: ```/sudo nano /etc/ssh/sshd_config```
+Shell command: ```$ sudo nano /etc/ssh/sshd_config```
 2. Inside the file change the port number from the default ```22``` to ```2200``` and disable root login by setting ```PermitRootLogin``` to ```no```
 3. Save and exit the file (i.e. type ```CTRL+X```, confirm changes with ```y```, confirm name with ```Enter```).
 4. Restart the SSH connection
-Shell command: ```sudo service ssh restart```
+Shell command: ```$ sudo service ssh restart```
 
 
 ### Configure Uncomplicated Firewall
 Configure the Uncomplicated Firewall (UFW) to only allow incoming connections for SSH (port 2200), HTTP (port 80), and NTP (port 123).
-1. ```$ sudo ufw allow 2200/tcp```
-2. ```$ sudo ufw allow 80/tcp```
-3. ```$ sudo ufw allow 123/udp```
-4. ```$ sudo ufw deny 22```$
-5. ```$ sudo ufw enable```
+* ```$ sudo ufw allow 2200/tcp```
+* ```$ sudo ufw allow 80/tcp```
+* ```$ sudo ufw allow 123/udp```
+* ```$ sudo ufw deny 22```$
+* ```$ sudo ufw enable```
 _______________________
 
 
@@ -93,11 +94,24 @@ Giving the grader access to the application via SSH requires 4 steps:
 
 
 ### Create new user
-1. To create a new user run the command ```sudo adduser grader```. The setup requires the setup of a password, which is shared with the Udacity team in a private note.
-2. To give the new ```grader``` user the permission to ```sudo``` run the command ```$ sudo visudo```. Below the line ```root ALL...``` add a new line ```$grader ALL=(ALL:ALL) ALL```. Save and exit the file.
-3. Create a SSH key pair for grader using the ```ssh-keygen``` tool on the **local machine**. In a separate terminal window, run these commands to generate a new key: ```cd ~/.ssh```, ```ssh-keygen -f ~/.ssh/grader_key.rsa```, ```grader```, ```*PASSWORD*``` ```cat ~/.ssh/grader_key.rsa.pub```. The content of this document has to be copied inside the ```authorized_keys``` folder on the Ubuntu server. On the **remote machine** run the command ```touch /home/grader/.ssh/authorized_keys``` and copy+paste the key. To protect the folder from unauthroized edits, change the access permission with the commands: ```sudo chmod 700 /home/grader/.ssh```, ```sudo chmod 644 /home/grader/.ssh/authorized_keys```, ```sudo chown -R grader:grader /home/grader/.ssh```, ```sudo service ssh restart```
+1. To create a new user run the command ```$ sudo adduser grader```. The setup requires the setup of a password, which is shared with the Udacity team in a private note.
+2. To give the new ```grader``` user the permission to ```sudo``` run the command ```$ sudo visudo```. Below the line ```root ALL...``` add a new line ```grader ALL=(ALL:ALL) ALL```. Save and exit the file.
+3. Create a SSH key pair for grader using the ```ssh-keygen``` tool on the **local machine**. In a separate terminal window, run these commands to generate a new key: 
+```
+cd ~/.ssh ssh-keygen -f ~/.ssh/grader_key.rsa
+grader
+*PASSWORD*
+cat ~/.ssh/grader_key.rsa.pub
+```
+The content of this document has to be copied inside the ```authorized_keys``` folder on the Ubuntu server. On the **remote machine** run the command ```touch /home/grader/.ssh/authorized_keys``` and copy+paste the key. To protect the folder from unauthroized edits, change the access permission with the commands: 
+```
+$ sudo chmod 700 /home/grader/.ssh 
+$ sudo chmod 644 /home/grader/.ssh/authorized_keys
+$ sudo chown -R grader:grader /home/grader/.ssh
+$ sudo service ssh restart
+```
 4. Log into the remote VM as the new grader user with the command ```ssh -i ~/.ssh/grader_key.rsa -p 2200 grader@18.197.158.41```. The command prompt should change to ```ubuntu@18.197.158.41:~$``` (depending on prompt customizations).
-5. To enforce SSH key based auhentication, open the sshd config file with ```sudo nano /etc/ssh/sshd_config``` and edit the line ```PasswordAuthentication``` to no. Restart with ```sudo service ssh restart```.
+5. To enforce SSH key based auhentication, open the sshd config file with ```$ sudo nano /etc/ssh/sshd_config``` and edit the line ```PasswordAuthentication``` to no. Restart with ```$ sudo service ssh restart```.
 _______________________
 
 
@@ -106,51 +120,59 @@ This stage required 4 steps:
 1. Configure the local timezone to UTC.
 2. Configure Locale
 3. Install and configure Apache to serve a Python mod_wsgi application.
-4. Install virtual environment
-5. Install necessary packages
-6. Install and configure PostgreSQL
+6. Install PostgreSQL
 7. Install git, Flask
 
 
 ### Configuring Time Zone
-To set the timezone to UTC, run the command ```sudo dpkg-reconfigure tzdata``` and choose ```None of the above``` from the initial selection. Then choose ```UTC``` in the new window.
+To set the timezone to UTC, run the command ```$ sudo dpkg-reconfigure tzdata``` and choose ```None of the above``` from the initial selection. Then choose ```UTC``` in the new window.
 
 
 ### Configuring Locale Setting
-I was running into an error ```unsupported locale setting``` and ran the following commands based on a [stackoverflow](https://stackoverflow.com/questions/14547631/python-locale-error-unsupported-locale-setting) answer by Muhammad Hassan: ```export LC_ALL="en_US.UTF-8"```, ```export LC_CTYPE="en_US.UTF-8"```, ```sudo dpkg-reconfigure locales```
+I was running into an error ```unsupported locale setting``` and ran the following commands based on a [stackoverflow](https://stackoverflow.com/questions/14547631/python-locale-error-unsupported-locale-setting) answer by Muhammad Hassan: ```export LC_ALL="en_US.UTF-8"```, ```export LC_CTYPE="en_US.UTF-8"```, ```$ sudo dpkg-reconfigure locales```
 
 
 ### Install and configure Apache
-To install ```apache2``` run the command ```sudo apt-get install apache2```.
+To install ```apache2``` run the command ```$ sudo apt-get install apache2```.
 When navigating to the public IP of the project, the server should not show a default apache page similar to this one:
 
 ![Apache Default Page](images/apache.png)
 
 Due to the upcoming deprecation of Python2 I decided to re-write my project submission for the 2nd project in Python3. This requires a Python3 ```mod_wsgi package``` that's installed as follows:
-```sudo apt-get install libapache2-mod-wsgi-py3
-sudo a2enmod wsgi
-sudo service apache2 start
+```
+$ sudo apt-get install libapache2-mod-wsgi-py3
+$ sudo a2enmod wsgi
+$ sudo service apache2 start
 ```
 
 
 ### Install PostgreSQL
 To install PostgreSQL run these commands
 ```
-sudo apt-get install libpq-dev python-dev
-sudo apt-get install postgresql postgresql-contrib
+$ sudo apt-get install libpq-dev python-dev
+$ sudo apt-get install postgresql postgresql-contrib
 ```
 
 ### Install git
-Run the follow command: ```sudo apt-get install git```. Configure git with your credentials. If you have no experience with Git, this free [Udacity course](https://eu.udacity.com/course/how-to-use-git-and-github--ud775) is helpful
+Run the follow command: ```$ sudo apt-get install git```. Configure git with your credentials. If you have no experience with Git, this free [Udacity course](https://eu.udacity.com/course/how-to-use-git-and-github--ud775) is helpful
 _______________________
 
 
 ## Deploy the application
+The final stage required 7 steps:
+1. Cloning the application from Github
+2. Updating the app code
+3. Install virtual environment
+4. Install necessary packages
+5. Configure virtual host
+6. Configure DB
+7. Configure Google OAuth
+
 ### Clone Application
 Create a new directory for the app and change the access permissions:
 ```
-sudo mkdir /var/www/catalog
-sudo chown -R grader:grader catalog
+$ sudo mkdir /var/www/catalog
+$ sudo chown -R grader:grader catalog
 ```
 Move into the directory and clone the application from Github:
 ```
@@ -178,26 +200,26 @@ application.secret_key = 'super_secret_key'
 The app will require several changes to run on a webserver:
 1. Change name from ```project.py``` to ```__init__.py```
 2. Edit the app to make the following changes (user CTRL+F to find them):
-* Change the SQL DB from sqlite to postgresql by replacing ```engine = create_engine('sqlite:///animalcatalog.db',connect_args={'check_same_thread': False}, poolclass=StaticPool, echo=True)``` with ```engine = create_engine('postgresql://catalog:catalog@localhost/catalog')```.
-Do the same in the ```database_setup.py``` file where ```engine = create_engine('sqlite:///animalcatalog.db')``` needs to be replaced with ```engine = create_engine('postgresql://catalog:catalog@localhost/catalog')```.
-* Remove the 2 lines ```app.debug = True``` and ```app.run(host='0.0.0.0', port=8000)``` and replace them with the single line ```app.run()``` in the ```__init__.py``` file.
+    * Change the SQL DB from sqlite to postgresql by replacing ```engine = create_engine('sqlite:///animalcatalog.db',connect_args={'check_same_thread': False}, poolclass=StaticPool, echo=True)``` with ```engine = create_engine('postgresql://catalog:catalog@localhost/catalog')```.
+    Do the same in the ```database_setup.py``` file where ```engine = create_engine('sqlite:///animalcatalog.db')``` needs to be replaced with ```engine = create_engine('postgresql://catalog:catalog@localhost/catalog')```.
+    * Remove the 2 lines ```app.debug = True``` and ```app.run(host='0.0.0.0', port=8000)``` and replace them with the single line ```app.run()``` in the ```__init__.py``` file.
 3. Change the path for the ```client_secrets.json``` in the app with these 2 edits:
-* ```CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']``` becomes ```CLIENT_ID = json.loads(open('/var/www/catalog/catalog/client_secrets.json', 'r').read())['web']['client_id']```
-* ```oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')``` becomes ```oauth_flow = flow_from_clientsecrets('/var/www/catalog/catalog/client_secrets.json', scope='')```
+    * ```CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']``` becomes ```CLIENT_ID = json.loads(open('/var/www/catalog/catalog/client_secrets.json', 'r').read())['web']['client_id']```
+    * ```oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')``` becomes ```oauth_flow = flow_from_clientsecrets('/var/www/catalog/catalog/client_secrets.json', scope='')```
 
 ### Install virtual environment
 The rest of the application is configured in a virtual environment. This [article](https://www.geeksforgeeks.org/python-virtual-environment/) by geeksforgeeks explains some of the advantages.
 
 To install the virtual environment, run these 2 commands:
 ```
-sudo apt-get install python3-pip
-sudo pip install virtualenv
+$ sudo apt-get install python3-pip
+$ sudo pip install virtualenv
 ```
 Then, switch to the directory and activate it:
 ```
 cd /var/www/catalog/catalog
 virtualenv -p python3 venv3
-sudo chown -R grader:grader venv3/
+$ sudo chown -R grader:grader venv3/
 . venv3/bin/activate
 ```
 
@@ -205,6 +227,7 @@ sudo chown -R grader:grader venv3/
 Install all the packages that are imported in the python file for Python3 by running these commands:
 ```
 pip3 install httplib2
+pip3 install Flask
 pip3 install requests
 pip3 install --upgrade oauth2client
 pip3 install sqlalchemy
@@ -241,7 +264,7 @@ To enable the catalog run ```$ sudo a2ensite catalog``` and restart the apache2 
 ### Configure DB
 The project also requires to not allow remote connections and create a new database user named ```catalog``` that has limited permissions to the catalog application database. To set this up, run the following commands:
 ```
-sudo su - postgres
+$ sudo su - postgres
 psql
 CREATE USER catalog WITH PASSWORD 'catalog';
 ALTER USER catalog CREATEDB;
@@ -269,6 +292,8 @@ In the Google console's applications tab "OAuth Consent Screen" the AWS domain h
 * ```http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/oauth2callback```
 * ```http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/classes/```
 
+## Done!
+Access the web application under [http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/](http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/). Thanks for testing it out!
 
 
 #### Special thanks to [stueken](https://github.com/stueken/FSND-P5_Linux-Server-Configuration) who inspired [iliketomatoes](https://github.com/iliketomatoes/linux_server_configuration) who in turn inspired [kcalata](https://github.com/kcalata/Linux-Server-Configuration). All of their detailed READMEs were very helpful.
