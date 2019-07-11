@@ -292,6 +292,13 @@ In the Google console's applications tab "OAuth Consent Screen" the AWS domain h
 * ```http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/oauth2callback```
 * ```http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/classes/```
 
+
+### Review Feedback
+Based on the feedback of the reviewer, I re-run the package update/upgrade command to upgrade also kept back packages: ```$ sudo apt-get update && sudo apt-get dist-upgrade```. Furthermore, I set up automatic updates according to this [manual](https://libre-software.net/ubuntu-automatic-updates/) from libre-software:
+1. Install unattended-upgrades package ```$ sudo apt install unattended-upgrades```
+2. Change ```$ sudo nano /etc/apt/apt.conf.d/50unattended-upgrades``` by uncommenting ```${distro_id}:${distro_codename}-updates```
+
+
 ## Done!
 Access the web application under [http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/](http://ec2-18-197-158-41.eu-central-1.compute.amazonaws.com/). Thanks for testing it out!
 
